@@ -16,4 +16,34 @@ The function should work on clicking `Web Worker` button. For testing, please us
 
 Note: When the web-workers are running in the background, you can observe that there is no UI blocking and `Print/Alerts Button` will still run.
           
+# ---------------------------------
+## Solution
+Have ejected create-react-app webpack to integrate a web-worker loader 
 
+Have exposed a useWebWorker hook will be used for a specific webworkertype(synchronous util), this hook will receive a workerType, onFailcallback and will return 
+execute function, workerActive & inProgress flag
+
+You can initialize as many useWebWorker(s) hooks for a component these hooks will be removed/terminated on unmount
+
+
+### usage
+```js
+const [executeMyTask, workerActive, threadInProgress] =
+    useWebWorker<number>({
+      workerType: WorkerTypes.MY_TASK,
+      onWorkerFailedToLoad: (e) => {
+        console.log("worker failed to load ", e);
+      },
+    });
+
+<div onClick={() => {
+          if (threadInProgress) {
+                    console.log("thread is busy please wait");
+          } else {
+                    executeMyTask('someparamdata',123)?.then((response) => {
+                              console.log(`executed thread ${response}`);
+                    });
+          }
+          }}
+        >Click Me</div>
+```
