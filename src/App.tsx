@@ -8,23 +8,25 @@ function App() {
   const [threadType, setThreadType] = useState<string>();
   const [aggregatedValue, setAggregatedValue] = useState<number>();
   //this executeBigTask and executeAsyncTask are 2 separate worker instances both will be removed during unmount of this component
-  const [executeBigTask] = useWebWorker<number>({
+  const [executeBigTask, __, executeBigTaskInProgress] = useWebWorker<number>({
     workerType: WorkerTypes.bigTaskReducer,
     onWorkerFailedToLoad: (e) => {
       console.log("worker failed to load ", e);
     },
   });
-  const [executeAsyncTask] = useWebWorker<number>({
-    workerType: WorkerTypes.asyncTaskReducer,
-    onWorkerFailedToLoad: (e) => {
-      console.log("worker failed to load ", e);
-    },
-  });
+  const [executeAsyncTask, _, executeAsyncTaskInProgress] =
+    useWebWorker<number>({
+      workerType: WorkerTypes.asyncTaskReducer,
+      onWorkerFailedToLoad: (e) => {
+        console.log("worker failed to load ", e);
+      },
+    });
   return (
     <div
       style={{
         textAlign: "center",
-      }}>
+      }}
+    >
       <h1>Assignment: Implement Web Workers</h1>
       <div
         style={{
@@ -34,10 +36,12 @@ function App() {
           width: "70%",
           margin: "auto",
           lineHeight: 1.5,
-        }}>
+        }}
+      >
         <h2 style={{ color: "red", display: "inline" }}>Problem Statement:</h2>
         <span
-          style={{ marginLeft: "5px", fontSize: "1.2rem", fontWeight: 500 }}>
+          style={{ marginLeft: "5px", fontSize: "1.2rem", fontWeight: 500 }}
+        >
           In the following problem statement a function named
           "runBigTaskReducer" is executed by buttons "Sync on Main thread" and
           "Async on Main thread". Click on the "Sync on Main thread" button, and
@@ -64,12 +68,15 @@ function App() {
           onClick={() => {
             setData("loading");
             // setAggregatedValue(runBigtaskReducer(fixedValue));
+            if (executeBigTaskInProgress)
+              console.log("executeBigTask thread is busy please wait");
             executeBigTask(fixedValue)?.then((response) => {
               console.log(`executed big task ${response}`);
               setAggregatedValue(response);
             });
             setThreadType("Sync on Main thread");
-          }}>
+          }}
+        >
           Sync on Main thread
         </button>
 
@@ -77,12 +84,16 @@ function App() {
           onClick={async () => {
             setData("loading");
             // setAggregatedValue(await runBigtaskAsyncReducer(fixedValue));
+            if (executeAsyncTaskInProgress) {
+              console.log("executeAsyncTask thread is busy please wait");
+            }
             executeAsyncTask(fixedValue)?.then((response) => {
               console.log(`executed async task ${response}`);
               setAggregatedValue(response);
             });
             setThreadType("Async on Main thread");
-          }}>
+          }}
+        >
           Async on Main thread
         </button>
 
@@ -96,7 +107,8 @@ function App() {
              */
 
             setThreadType("Web Worker");
-          }}>
+          }}
+        >
           Web Worker
         </button>
       </div>
@@ -106,7 +118,8 @@ function App() {
         <button
           onClick={async () => {
             setThreadType("Print button is working...");
-          }}>
+          }}
+        >
           Print Button
         </button>
 
@@ -114,7 +127,8 @@ function App() {
           onClick={() => {
             alert("Button working UI not blocked...");
             setThreadType("Alert button is working...");
-          }}>
+          }}
+        >
           Alerts Button
         </button>
         <div style={{ fontSize: "2rem", marginTop: "1rem" }}>{threadType}</div>

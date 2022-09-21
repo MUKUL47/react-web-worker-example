@@ -10,7 +10,8 @@ import { WorkerTypes } from "../utils";
  */
 type HookResponse = [
   execute: (...params: any[]) => Promise<any> | null,
-  workerActive: boolean
+  workerActive: boolean,
+  inProgress: boolean
 ];
 /**
  * workerType is a enum type i.e how many functions(computations) are supported by that worker instance, for more info please visit file ./worker/index.worker.ts
@@ -22,6 +23,7 @@ export default function useWebWorker<P>(props: {
   onWorkerFailedToLoad?: (error: string) => void;
 }): HookResponse {
   const [worker, setWorker] = useState<Worker>();
+  const inProgress = useRef<boolean>(false);
   const finishedWorker = useRef<{
     resolved: (p: P) => void;
     reject: (e: any) => void;
@@ -43,13 +45,20 @@ export default function useWebWorker<P>(props: {
   useEffect(() => {
     if (!worker) return;
     worker?.addEventListener("message", onWorkerMessage);
+    worker?.addEventListener("error", onWorkerError);
     return () => {
       worker?.removeEventListener("message", onWorkerMessage);
       worker?.terminate?.();
     };
   }, [worker]);
 
+  function onWorkerError() {
+    inProgress.current = false;
+    return finishedWorker?.current?.reject?.("Worker failed");
+  }
+
   function onWorkerMessage(message: any) {
+    inProgress.current = false;
     const {
       data: { error, data },
     } = message;
@@ -60,12 +69,15 @@ export default function useWebWorker<P>(props: {
   }
 
   function execute(...params: any[]) {
-    if (!worker) return null;
+    if (!worker || inProgress.current === true) {
+      return null;
+    }
     const pendingPromise = new Promise((resolved, reject) => {
       finishedWorker.current = { resolved, reject };
     });
+    inProgress.current = true!;
     worker?.postMessage({ params, workerType: props.workerType });
     return pendingPromise;
   }
-  return [execute, !!worker];
+  return [execute, !!worker, inProgress.current];
 }

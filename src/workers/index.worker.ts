@@ -8,6 +8,8 @@ import {
  * this instance will be running a separate working thread
  * to add more worker type please update WorkerTypes enum in utils class & later append a switch case for that newly added function
  */
+//@ts-nocheck
+//@ts-ignore
 onmessage = async (e) => {
   let func = null;
   switch (e?.data?.workerType) {
@@ -21,4 +23,3 @@ onmessage = async (e) => {
   if (!func) return postMessage({ error: "Worker type not found" });
   postMessage(await getWorkerPayload(func, e));
 };
-export default WorkerTypes;
